@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neo Merge - 第41弾</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; overflow: hidden; width: 100%; height: 100%; position: fixed; touch-action: none; background: #0f172a; font-family: sans-serif; }
+        
+        #ad-top, #ad-bottom { position: fixed; left: 0; width: 100%; height: 100px; background: #333; z-index: 100; display: flex; align-items: center; justify-content: center; }
+        #ad-top { top: 0; } #ad-bottom { bottom: 0; }
+        iframe { border: none; width: 100%; height: 100px; }
+
+        #game-outer { position: absolute; top: 100px; bottom: 100px; left: 0; right: 0; overflow: hidden; }
+        #score-display { position: absolute; top: 10px; left: 10px; color: white; font-size: 20px; font-weight: bold; z-index: 10; background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.3); }
+
+        #menuScreen { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.9); display: flex; flex-direction: column; 
+            align-items: center; justify-content: flex-start; z-index: 50; 
+            padding: 20px 0; overflow-y: auto; color: white;
+        }
+        #result-msg { color: #facc15; margin: 15px 0; font-size: 28px; text-align: center; }
+        .guide-text { padding: 0 30px; text-align: center; font-size: 14px; margin-bottom: 15px; color: #cbd5e1; }
+
+        #ad-middle-container { width: 300px; height: 120px; background: #000; margin: 10px 0; display: none; justify-content: center; align-items: center; }
+
+        .menu-btn-group { display: flex; flex-direction: column; align-items: center; width: 100%; gap: 12px; padding-bottom: 40px; }
+        .menu-btn { width: 260px; padding: 15px; font-size: 18px; border: none; border-radius: 30px; font-weight: bold; cursor: pointer; text-decoration: none; text-align: center; }
+        #retry-btn { background: #facc15; color: #000; box-shadow: 0 4px #ca8a04; }
+        #more-games-btn { background: #ff4081; color: white; box-shadow: 0 4px #c2185b; }
+        
+        #dead-line { position: absolute; top: 80px; left: 0; width: 100%; height: 2px; background: rgba(255,0,0,0.3); border-top: 2px dashed red; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+    <div id="ad-top"><iframe src="ad.html"></iframe></div>
+
+    <div id="game-outer">
+        <div id="score-display">SCORE: 0</div>
+        <div id="dead-line"></div>
+        <div id="game-canvas-container"></div>
+
+        <div id="menuScreen">
+            <h2 id="result-msg">Neo Merge</h2>
+            <p class="guide-text">
+                タップした場所にボールが落ちるよ！<br>
+                同じ色のボールをぶつけると合体！<br>
+                どんどん大きくして高得点を狙おう。
+            </p>
+            
+            <div id="ad-middle-container">
+                <script src="https://adm.shinobi.jp/s/1e6de436ea850948e238e975a93767eb"></script>
+            </div>
+
+            <div class="menu-btn-group">
+                <button id="retry-btn" class="menu-btn" onclick="startNewGame()">★ スタート ★</button>
+                <a href="https://saaaachi.github.io/Grow-Planet/" id="more-games-btn" class="menu-btn">★ 他のゲームはこちら ★</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="ad-bottom"><iframe src="ad.html"></iframe></div>
+
+    <script>
+        const { Engine, Render, Runner, Bodies, Composite, Events, Body } = Matter;
+        let engine, render, runner;
+        let score = 0, gameActive = false;
+        const container = document.getElementById('game-canvas-container');
+        const ballTypes = [
+            { r: 15, color: '#f87171', score: 2 },
+            { r: 25, color: '#fb923c', score: 4 },
+            { r: 35, color: '#fbbf24', score: 8 },
+            { r: 45, color: '#a3e635', score: 16 },
+            { r: 55, color: '#2dd4bf', score: 32 },
+            { r: 70, color: '#3b82f6', score: 64 },
+            { r: 85, color: '#818cf8', score: 128 },
+            { r: 100, color: '#c084fc', score: 256 },
+            { r: 120, color: 'linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet)', score: 512 }
+        ];
+
+        function initEngine() {
+            engine = Engine.create();
+            render = Render.create({
+                element: container,
+                engine: engine,
+                options: {
+                    width: window.innerWidth,
+                    height: window.innerHeight - 200,
+                    wireframes: false,
+                    background: 'transparent'
+                }
+            });
+            Render.run(render);
+            runner = Runner.create();
+            Runner.run(runner, engine);
+
+            // 床と壁
+            const ground = Bodies.rectangle(window.innerWidth/2, window.innerHeight-190, window.innerWidth, 20, { isStatic: true, render: { fillStyle: '#334155' } });
+            const leftWall = Bodies.rectangle(0, window.innerHeight/2, 10, window.innerHeight, { isStatic: true, render: { fillStyle: '#334155' } });
+            const rightWall = Bodies.rectangle(window.innerWidth, window.innerHeight/2, 10, window.innerHeight, { isStatic: true, render: { fillStyle: '#334155' } });
+            Composite.add(engine.world, [ground, leftWall, rightWall]);
+
+            // 衝突判定（マージ処理）
+            Events.on(engine, 'collisionStart', (event) => {
+                event.pairs.forEach((pair) => {
+                    const { bodyA, bodyB } = pair;
+                    if (bodyA.label === bodyB.label && bodyA.label.startsWith('ball_')) {
+                        const level = parseInt(bodyA.label.split('_')[1]);
+                        if (level < ballTypes.length - 1) {
+                            const newX = (bodyA.position.x + bodyB.position.x) / 2;
+                            const newY = (bodyA.position.y + bodyB.position.y) / 2;
+                            Composite.remove(engine.world, [bodyA, bodyB]);
+                            createBall(newX, newY, level + 1);
+                            score += ballTypes[level + 1].score;
+                            document.getElementById('score-display').innerText = "SCORE: " + score;
+                        }
+                    }
+                });
+            });
+        }
+
+        function createBall(x, y, level, isDynamic = true) {
+            const type = ballTypes[level];
+            const ball = Bodies.circle(x, y, type.r, {
+                label: 'ball_' + level,
+                restitution: 0.3,
+                friction: 0.1,
+                render: { fillStyle: type.color }
+            });
+            Composite.add(engine.world, ball);
+            return ball;
+        }
+
+        function startNewGame() {
+            document.getElementById("menuScreen").style.display = "none";
+            document.getElementById("ad-middle-container").style.display = "none";
+            if(engine) {
+                Composite.clear(engine.world);
+                initEngine();
+            }
+            score = 0;
+            document.getElementById('score-display').innerText = "SCORE: 0";
+            gameActive = true;
+        }
+
+        container.addEventListener('pointerdown', (e) => {
+            if (!gameActive) return;
+            const x = e.clientX;
+            // 初期ボール（レベル0〜2）をランダムに落とす
+            const startLevel = Math.floor(Math.random() * 3);
+            createBall(x, 50, startLevel);
+        });
+
+        // オーバー判定
+        setInterval(() => {
+            if (!gameActive) return;
+            const bodies = Composite.allBodies(engine.world);
+            bodies.forEach(body => {
+                if (!body.isStatic && body.position.y < 80 && body.velocity.y < 0.1) {
+                    gameOver();
+                }
+            });
+        }, 1000);
+
+        function gameOver() {
+            gameActive = false;
+            document.getElementById("result-msg").innerText = "あふれちゃった！😱\nSCORE: " + score;
+            document.getElementById("ad-middle-container").style.display = "flex";
+            document.getElementById("menuScreen").style.display = "flex";
+        }
+
+        window.onload = () => {
+            initEngine();
+            document.getElementById("menuScreen").style.display = "flex";
+        };
+
+        // 広告リフレッシュ
+        setInterval(() => {
+            const frames = [document.getElementById('frame-top'), document.getElementById('frame-bottom')];
+            frames.forEach(f => { if(f) f.src = f.src; });
+        }, 30000);
+    </script>
+</body>
+</html>
