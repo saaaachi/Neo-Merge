@@ -8,9 +8,12 @@
         * { box-sizing: border-box; }
         body { margin: 0; overflow: hidden; background: #0f172a; font-family: sans-serif; touch-action: none; position: fixed; width: 100%; height: 100%; }
         
+        /* 上下広告エリア */
         #ad-top, #ad-bottom { position: fixed; left: 0; width: 100%; height: 100px; background: #333; z-index: 100; display: flex; align-items: center; justify-content: center; }
         #ad-top { top: 0; } #ad-bottom { bottom: 0; }
+        iframe { border: none; width: 100%; height: 100px; }
 
+        /* ゲームメインエリア */
         #game-outer { position: absolute; top: 100px; bottom: 100px; left: 0; right: 0; background: #1e293b; overflow: hidden; }
         #game-canvas { width: 100%; height: 100%; display: block; }
         
@@ -18,15 +21,15 @@
         .score-box { background: rgba(0,0,0,0.6); color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; border: 1px solid #475569; }
         #dead-line { position: absolute; top: 60px; left: 0; width: 100%; height: 2px; background: rgba(255,0,0,0.4); border-top: 2px dashed #ef4444; pointer-events: none; }
 
-        /* メニュー画面共通レイアウト */
+        /* メニュー画面共通 */
         #menuScreen { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
             background: rgba(0,0,0,0.92); display: flex; flex-direction: column; 
             align-items: center; justify-content: flex-start; z-index: 50; 
-            padding-top: 20px; color: white;
+            padding-top: 40px; color: white;
         }
 
-        /* 忍び広告コンテナ：ゲームオーバー時のみ表示 */
+        /* 忍び広告：ゲームオーバー時のみ表示 */
         #ad-middle-container { 
             width: 300px; min-height: 125px; background: rgba(255,255,255,0.05); 
             margin: 15px 0; display: none; justify-content: center; align-items: center; 
@@ -47,7 +50,7 @@
 </head>
 <body>
 
-    <div id="ad-top"><iframe id="frame-top" src="ad.html" style="border:none;width:100%;height:100px;"></iframe></div>
+    <div id="ad-top"><iframe id="frame-top" src="ad.html"></iframe></div>
 
     <div id="game-outer">
         <div id="ui-layer"><div class="score-box" id="score-val">SCORE: 0</div></div>
@@ -72,7 +75,7 @@
         </div>
     </div>
 
-    <div id="ad-bottom"><iframe id="frame-bottom" src="ad.html" style="border:none;width:100%;height:100px;"></iframe></div>
+    <div id="ad-bottom"><iframe id="frame-bottom" src="ad.html"></iframe></div>
 
     <script>
         const canvas = document.getElementById('game-canvas');
@@ -94,7 +97,7 @@
         function startNewGame() {
             document.getElementById("menuScreen").style.display = "none";
             document.getElementById("ad-middle-container").style.display = "none";
-            document.getElementById("guide-txt").style.display = "block"; // 説明を表示
+            document.getElementById("guide-txt").style.display = "block";
             score = 0; balls = []; gameActive = true;
             document.getElementById('score-val').innerText = "SCORE: 0";
             requestAnimationFrame(update);
@@ -163,45 +166,23 @@
         function gameOver() {
             gameActive = false;
             document.getElementById("result-msg").innerHTML = "あふれちゃった！😱<br>SCORE: " + score;
-            document.getElementById("guide-txt").style.display = "none"; // 説明文を非表示にする
+            document.getElementById("guide-txt").style.display = "none";
             document.getElementById("retry-btn").innerText = "★ もう一度挑戦 ★";
-            document.getElementById("ad-middle-container").style.display = "flex"; // 広告を表示
+            document.getElementById("ad-middle-container").style.display = "flex";
             document.getElementById("menuScreen").style.display = "flex";
         }
 
+        // 広告リフレッシュ機能（30秒ごと）
+        function refreshAds() {
+            const topFrame = document.getElementById('frame-top');
+            const bottomFrame = document.getElementById('frame-bottom');
+            if (topFrame) topFrame.src = topFrame.src;
+            if (bottomFrame) bottomFrame.src = bottomFrame.src;
+        }
+        setInterval(refreshAds, 30000);
+
         window.onload = () => { resize(); document.getElementById("menuScreen").style.display = "flex"; };
-// --- 以下、既存のスクリプトの最後の方に追加・修正してください ---
-
-function gameOver() {
-    gameActive = false;
-    document.getElementById("result-msg").innerHTML = "あふれちゃった！😱<br>SCORE: " + score;
-    document.getElementById("guide-txt").style.display = "none"; 
-    document.getElementById("retry-btn").innerText = "★ もう一度挑戦 ★";
-    document.getElementById("ad-middle-container").style.display = "flex"; 
-    document.getElementById("menuScreen").style.display = "flex";
-}
-
-// ★ 30秒ごとに上下の広告をリフレッシュする関数
-function refreshAds() {
-    const topFrame = document.getElementById('frame-top');
-    const bottomFrame = document.getElementById('frame-bottom');
-    
-    if (topFrame) {
-        topFrame.src = topFrame.src; // 再読み込み
-    }
-    if (bottomFrame) {
-        bottomFrame.src = bottomFrame.src; // 再読み込み
-    }
-    console.log("Ads Refreshed"); // デバッグ用
-}
-
-// 30000ミリ秒 = 30秒ごとに実行
-setInterval(refreshAds, 30000);
-
-window.onload = () => { 
-    resize(); 
-    document.getElementById("menuScreen").style.display = "flex"; 
-};
+        window.onresize = resize;
     </script>
 </body>
 </html>
