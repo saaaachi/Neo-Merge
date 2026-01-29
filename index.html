@@ -8,12 +8,11 @@
         * { box-sizing: border-box; }
         body { margin: 0; overflow: hidden; background: #0f172a; font-family: sans-serif; touch-action: none; position: fixed; width: 100%; height: 100%; }
         
-        /* 上下広告エリア */
-        #ad-top, #ad-bottom { position: fixed; left: 0; width: 100%; height: 100px; background: #333; z-index: 100; display: flex; align-items: center; justify-content: center; }
+        /* 上下広告：iframeを確実に制御 */
+        #ad-top, #ad-bottom { position: fixed; left: 0; width: 100%; height: 100px; background: #333; z-index: 100; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         #ad-top { top: 0; } #ad-bottom { bottom: 0; }
-        iframe { border: none; width: 100%; height: 100px; }
+        .ad-frame { border: none; width: 100%; height: 100px; display: block; }
 
-        /* ゲームメインエリア */
         #game-outer { position: absolute; top: 100px; bottom: 100px; left: 0; right: 0; background: #1e293b; overflow: hidden; }
         #game-canvas { width: 100%; height: 100%; display: block; }
         
@@ -21,36 +20,28 @@
         .score-box { background: rgba(0,0,0,0.6); color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; border: 1px solid #475569; }
         #dead-line { position: absolute; top: 60px; left: 0; width: 100%; height: 2px; background: rgba(255,0,0,0.4); border-top: 2px dashed #ef4444; pointer-events: none; }
 
-        /* メニュー画面共通 */
         #menuScreen { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
             background: rgba(0,0,0,0.92); display: flex; flex-direction: column; 
             align-items: center; justify-content: flex-start; z-index: 50; 
-            padding-top: 40px; color: white;
+            padding-top: 30px; color: white;
         }
 
-        /* 忍び広告：ゲームオーバー時のみ表示 */
+        /* 中央の「切り替えない」忍者広告エリア */
         #ad-middle-container { 
             width: 300px; min-height: 125px; background: rgba(255,255,255,0.05); 
             margin: 15px 0; display: none; justify-content: center; align-items: center; 
         }
 
-        .menu-btn-group { 
-            display: flex; flex-direction: column; align-items: center; 
-            width: 100%; gap: 12px; margin-top: 10px;
-        }
-        .menu-btn { 
-            width: 280px; padding: 14px; font-size: 18px; border: none; 
-            border-radius: 35px; font-weight: bold; cursor: pointer; 
-            text-decoration: none; text-align: center; display: block;
-        }
+        .menu-btn-group { display: flex; flex-direction: column; align-items: center; width: 100%; gap: 12px; margin-top: 10px; }
+        .menu-btn { width: 280px; padding: 14px; font-size: 18px; border: none; border-radius: 35px; font-weight: bold; cursor: pointer; text-decoration: none; text-align: center; display: block; }
         #retry-btn { background: #facc15; color: #000; box-shadow: 0 4px #ca8a04; }
         #more-games-btn { background: #ff4081; color: white; box-shadow: 0 4px #c2185b; }
     </style>
 </head>
 <body>
 
-    <div id="ad-top"><iframe id="frame-top" src="ad.html"></iframe></div>
+    <div id="ad-top"><iframe id="frame-top" class="ad-frame" src="ad.html"></iframe></div>
 
     <div id="game-outer">
         <div id="ui-layer"><div class="score-box" id="score-val">SCORE: 0</div></div>
@@ -59,7 +50,6 @@
 
         <div id="menuScreen">
             <h2 id="result-msg" style="color:#facc15; text-align:center; margin: 10px 0;">Neo Merge</h2>
-            
             <p id="guide-txt" style="text-align:center; font-size:14px; color:#cbd5e1; padding:0 30px; line-height:1.6;">
                 同じ色のボールをぶつけて大きくしよう！<br>赤い線を越えるとゲームオーバー！
             </p>
@@ -75,7 +65,7 @@
         </div>
     </div>
 
-    <div id="ad-bottom"><iframe id="frame-bottom" src="ad.html"></iframe></div>
+    <div id="ad-bottom"><iframe id="frame-bottom" class="ad-frame" src="ad.html"></iframe></div>
 
     <script>
         const canvas = document.getElementById('game-canvas');
@@ -114,21 +104,17 @@
         function update() {
             if(!gameActive) return;
             ctx.clearRect(0,0,canvas.width, canvas.height);
-            
             for(let i=0; i<balls.length; i++) {
                 let b = balls[i];
                 b.vy += 0.25; b.x += b.vx; b.y += b.vy; b.vx *= 0.98;
-
                 if(b.y + b.r > canvas.height) { b.y = canvas.height - b.r; b.vy *= -0.3; }
                 if(b.x - b.r < 0) { b.x = b.r; b.vx *= -0.5; }
                 if(b.x + b.r > canvas.width) { b.x = canvas.width - b.r; b.vx *= -0.5; }
-
                 for(let j=i+1; j<balls.length; j++) {
                     let b2 = balls[j];
                     let dx = b2.x - b.x, dy = b2.y - b.y;
                     let dist = Math.sqrt(dx*dx + dy*dy);
                     let minDist = b.r + b2.r;
-
                     if(dist < minDist) {
                         if(b.level === b2.level && b.level < ballTypes.length - 1) {
                             b.level++; b.r = ballTypes[b.level].r;
@@ -147,7 +133,6 @@
                         b2.vx += moveX * 0.1; b2.vy += moveY * 0.1;
                     }
                 }
-
                 ctx.beginPath();
                 ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
                 ctx.fillStyle = ballTypes[b.level].color;
@@ -155,10 +140,7 @@
                 ctx.strokeStyle = "rgba(255,255,255,0.3)";
                 ctx.lineWidth = 2;
                 ctx.stroke();
-
-                if(b.y < 60 && Math.abs(b.vy) < 0.5 && b.y > 0) {
-                    gameOver();
-                }
+                if(b.y < 60 && Math.abs(b.vy) < 0.5 && b.y > 0) gameOver();
             }
             if(gameActive) requestAnimationFrame(update);
         }
@@ -167,18 +149,23 @@
             gameActive = false;
             document.getElementById("result-msg").innerHTML = "あふれちゃった！😱<br>SCORE: " + score;
             document.getElementById("guide-txt").style.display = "none";
-            document.getElementById("retry-btn").innerText = "★ もう一度挑戦 ★";
             document.getElementById("ad-middle-container").style.display = "flex";
             document.getElementById("menuScreen").style.display = "flex";
         }
 
-        // 広告リフレッシュ機能（30秒ごと）
+        // --- 広告リフレッシュロジック ---
         function refreshAds() {
+            // 現在の時刻を付与してキャッシュを回避し、確実に再読み込みさせる
+            const timestamp = new Date().getTime();
             const topFrame = document.getElementById('frame-top');
             const bottomFrame = document.getElementById('frame-bottom');
-            if (topFrame) topFrame.src = topFrame.src;
-            if (bottomFrame) bottomFrame.src = bottomFrame.src;
+            
+            if (topFrame) topFrame.src = "ad.html?t=" + timestamp;
+            if (bottomFrame) bottomFrame.src = "ad.html?t=" + timestamp;
+            console.log("Ads Refreshed at " + timestamp);
         }
+        
+        // 30秒ごとに実行
         setInterval(refreshAds, 30000);
 
         window.onload = () => { resize(); document.getElementById("menuScreen").style.display = "flex"; };
