@@ -170,6 +170,38 @@
         }
 
         window.onload = () => { resize(); document.getElementById("menuScreen").style.display = "flex"; };
+// --- 以下、既存のスクリプトの最後の方に追加・修正してください ---
+
+function gameOver() {
+    gameActive = false;
+    document.getElementById("result-msg").innerHTML = "あふれちゃった！😱<br>SCORE: " + score;
+    document.getElementById("guide-txt").style.display = "none"; 
+    document.getElementById("retry-btn").innerText = "★ もう一度挑戦 ★";
+    document.getElementById("ad-middle-container").style.display = "flex"; 
+    document.getElementById("menuScreen").style.display = "flex";
+}
+
+// ★ 30秒ごとに上下の広告をリフレッシュする関数
+function refreshAds() {
+    const topFrame = document.getElementById('frame-top');
+    const bottomFrame = document.getElementById('frame-bottom');
+    
+    if (topFrame) {
+        topFrame.src = topFrame.src; // 再読み込み
+    }
+    if (bottomFrame) {
+        bottomFrame.src = bottomFrame.src; // 再読み込み
+    }
+    console.log("Ads Refreshed"); // デバッグ用
+}
+
+// 30000ミリ秒 = 30秒ごとに実行
+setInterval(refreshAds, 30000);
+
+window.onload = () => { 
+    resize(); 
+    document.getElementById("menuScreen").style.display = "flex"; 
+};
     </script>
 </body>
 </html>
