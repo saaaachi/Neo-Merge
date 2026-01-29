@@ -18,22 +18,26 @@
         .score-box { background: rgba(0,0,0,0.6); color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; border: 1px solid #475569; }
         #dead-line { position: absolute; top: 60px; left: 0; width: 100%; height: 2px; background: rgba(255,0,0,0.4); border-top: 2px dashed #ef4444; pointer-events: none; }
 
+        /* メニュー画面共通レイアウト */
         #menuScreen { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
             background: rgba(0,0,0,0.92); display: flex; flex-direction: column; 
             align-items: center; justify-content: flex-start; z-index: 50; 
-            padding-top: 40px; color: white; overflow-y: auto;
+            padding-top: 20px; color: white;
         }
 
-        /* 忍び広告：初期状態は非表示 */
+        /* 忍び広告コンテナ：ゲームオーバー時のみ表示 */
         #ad-middle-container { 
-            width: 300px; min-height: 120px; background: rgba(255,255,255,0.05); 
-            margin: 20px 0; display: none; justify-content: center; align-items: center; 
+            width: 300px; min-height: 125px; background: rgba(255,255,255,0.05); 
+            margin: 15px 0; display: none; justify-content: center; align-items: center; 
         }
 
-        .menu-btn-group { display: flex; flex-direction: column; align-items: center; width: 100%; gap: 15px; padding-bottom: 40px; }
+        .menu-btn-group { 
+            display: flex; flex-direction: column; align-items: center; 
+            width: 100%; gap: 12px; margin-top: 10px;
+        }
         .menu-btn { 
-            width: 280px; padding: 16px; font-size: 18px; border: none; 
+            width: 280px; padding: 14px; font-size: 18px; border: none; 
             border-radius: 35px; font-weight: bold; cursor: pointer; 
             text-decoration: none; text-align: center; display: block;
         }
@@ -51,7 +55,8 @@
         <canvas id="game-canvas"></canvas>
 
         <div id="menuScreen">
-            <h2 id="result-msg" style="color:#facc15; text-align:center; margin-bottom: 10px;">Neo Merge</h2>
+            <h2 id="result-msg" style="color:#facc15; text-align:center; margin: 10px 0;">Neo Merge</h2>
+            
             <p id="guide-txt" style="text-align:center; font-size:14px; color:#cbd5e1; padding:0 30px; line-height:1.6;">
                 同じ色のボールをぶつけて大きくしよう！<br>赤い線を越えるとゲームオーバー！
             </p>
@@ -88,7 +93,8 @@
 
         function startNewGame() {
             document.getElementById("menuScreen").style.display = "none";
-            document.getElementById("ad-middle-container").style.display = "none"; // スタート時は隠す
+            document.getElementById("ad-middle-container").style.display = "none";
+            document.getElementById("guide-txt").style.display = "block"; // 説明を表示
             score = 0; balls = []; gameActive = true;
             document.getElementById('score-val').innerText = "SCORE: 0";
             requestAnimationFrame(update);
@@ -157,10 +163,10 @@
         function gameOver() {
             gameActive = false;
             document.getElementById("result-msg").innerHTML = "あふれちゃった！😱<br>SCORE: " + score;
+            document.getElementById("guide-txt").style.display = "none"; // 説明文を非表示にする
             document.getElementById("retry-btn").innerText = "★ もう一度挑戦 ★";
-            document.getElementById("ad-middle-container").style.display = "flex"; // ここで広告を表示！
+            document.getElementById("ad-middle-container").style.display = "flex"; // 広告を表示
             document.getElementById("menuScreen").style.display = "flex";
-            document.getElementById("menuScreen").scrollTop = 0;
         }
 
         window.onload = () => { resize(); document.getElementById("menuScreen").style.display = "flex"; };
