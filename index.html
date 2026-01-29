@@ -4,75 +4,45 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Neo Merge - 第41弾</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
     <style>
         * { box-sizing: border-box; }
-        html, body { 
-            margin: 0; padding: 0; overflow: hidden; 
-            width: 100%; height: 100%; position: fixed; 
-            touch-action: none; background: #0f172a; font-family: sans-serif; 
-        }
+        body { margin: 0; overflow: hidden; background: #0f172a; font-family: sans-serif; touch-action: none; position: fixed; width: 100%; height: 100%; }
         
         #ad-top, #ad-bottom { position: fixed; left: 0; width: 100%; height: 100px; background: #333; z-index: 100; display: flex; align-items: center; justify-content: center; }
         #ad-top { top: 0; } #ad-bottom { bottom: 0; }
-        iframe { border: none; width: 100%; height: 100px; }
 
-        /* ゲーム外枠 */
-        #game-outer { 
-            position: absolute; top: 100px; bottom: 100px; left: 0; right: 0; 
-            background: #1e293b; overflow: hidden; 
-        }
-        #score-display { 
-            position: absolute; top: 10px; left: 10px; color: white; 
-            font-size: 20px; font-weight: bold; z-index: 10; 
-            background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 20px; 
-        }
+        #game-outer { position: absolute; top: 100px; bottom: 100px; left: 0; right: 0; background: #1e293b; overflow: hidden; }
+        #game-canvas { width: 100%; height: 100%; cursor: crosshair; display: block; }
+        
+        #ui-layer { position: absolute; top: 10px; left: 10px; z-index: 10; pointer-events: none; }
+        .score-box { background: rgba(0,0,0,0.6); color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; border: 1px solid #475569; }
 
-        /* ゲームキャンバス */
-        #game-canvas-container { width: 100%; height: 100%; cursor: crosshair; }
+        #dead-line { position: absolute; top: 60px; left: 0; width: 100%; height: 2px; background: rgba(255,0,0,0.4); border-top: 2px dashed #ef4444; pointer-events: none; }
 
-        /* メニュー画面 */
         #menuScreen { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.95); display: flex; flex-direction: column; 
-            align-items: center; justify-content: flex-start; z-index: 50; 
-            padding: 20px 0; overflow-y: auto; color: white;
+            background: rgba(0,0,0,0.9); display: flex; flex-direction: column; 
+            align-items: center; justify-content: flex-start; z-index: 50; padding-top: 20px; color: white;
         }
-        #result-msg { color: #facc15; margin: 15px 0; font-size: 28px; text-align: center; }
-        .guide-text { padding: 0 30px; text-align: center; font-size: 14px; margin-bottom: 15px; color: #cbd5e1; }
-
-        #ad-middle-container { width: 300px; height: 120px; background: #000; margin: 10px 0; display: none; justify-content: center; align-items: center; }
-
-        .menu-btn-group { display: flex; flex-direction: column; align-items: center; width: 100%; gap: 12px; padding-bottom: 40px; }
-        .menu-btn { width: 260px; padding: 15px; font-size: 18px; border: none; border-radius: 30px; font-weight: bold; cursor: pointer; text-decoration: none; text-align: center; }
+        .menu-btn { width: 260px; padding: 15px; font-size: 18px; border: none; border-radius: 30px; font-weight: bold; cursor: pointer; text-decoration: none; text-align: center; margin-top: 10px; }
         #retry-btn { background: #facc15; color: #000; }
         #more-games-btn { background: #ff4081; color: white; }
-        
-        /* 境界線 */
-        #dead-line { position: absolute; top: 60px; left: 0; width: 100%; height: 2px; background: rgba(255,0,0,0.5); border-top: 2px dashed red; pointer-events: none; }
     </style>
 </head>
 <body>
 
-    <div id="ad-top"><iframe src="ad.html"></iframe></div>
+    <div id="ad-top"><iframe src="ad.html" style="border:none;width:100%;height:100px;"></iframe></div>
 
     <div id="game-outer">
-        <div id="score-display">SCORE: 0</div>
+        <div id="ui-layer"><div class="score-box" id="score-val">SCORE: 0</div></div>
         <div id="dead-line"></div>
-        <div id="game-canvas-container"></div>
+        <canvas id="game-canvas"></canvas>
 
         <div id="menuScreen">
-            <h2 id="result-msg">Neo Merge</h2>
-            <p class="guide-text">
-                タップした場所にボールが落ちるよ！<br>
-                同じ色をぶつけると大きく進化！<br>
-                赤い線を越えて溢れたら終了😱
+            <h2 id="result-msg" style="color:#facc15; text-align:center;">Neo Merge</h2>
+            <p style="text-align:center; font-size:13px; color:#cbd5e1; padding:0 20px;">
+                タップでボールを投下！<br>同じ色をぶつけて大きくしよう。<br>赤い線を越えるとゲームオーバー！
             </p>
-            
-            <div id="ad-middle-container">
-                <script src="https://adm.shinobi.jp/s/1e6de436ea850948e238e975a93767eb"></script>
-            </div>
-
             <div class="menu-btn-group">
                 <button id="retry-btn" class="menu-btn" onclick="startNewGame()">★ スタート ★</button>
                 <a href="https://saaaachi.github.io/Grow-Planet/" id="more-games-btn" class="menu-btn">★ 他のゲームはこちら ★</a>
@@ -80,140 +50,107 @@
         </div>
     </div>
 
-    <div id="ad-bottom"><iframe src="ad.html"></iframe></div>
+    <div id="ad-bottom"><iframe src="ad.html" style="border:none;width:100%;height:100px;"></iframe></div>
 
     <script>
-        const { Engine, Render, Runner, Bodies, Composite, Events } = Matter;
-        let engine, render, runner;
-        let score = 0, gameActive = false, canDrop = true;
-        
-        const container = document.getElementById('game-canvas-container');
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        let score = 0, gameActive = false, balls = [];
         const ballTypes = [
-            { r: 15, color: '#f87171', score: 2 },   // 赤
-            { r: 25, color: '#fb923c', score: 4 },   // オレンジ
-            { r: 35, color: '#fbbf24', score: 8 },   // 黄
-            { r: 45, color: '#a3e635', score: 16 },  // 黄緑
-            { r: 55, color: '#2dd4bf', score: 32 },  // エメラルド
-            { r: 65, color: '#3b82f6', score: 64 },  // 青
-            { r: 80, color: '#818cf8', score: 128 }, // 紫
-            { r: 95, color: '#c084fc', score: 256 }, // ライトパープル
-            { r: 110, color: '#db2777', score: 512 } // 濃いピンク（最終）
+            { r: 15, color: '#f87171', score: 2 }, { r: 24, color: '#fb923c', score: 4 },
+            { r: 32, color: '#fbbf24', score: 8 }, { r: 42, color: '#a3e635', score: 16 },
+            { r: 52, color: '#2dd4bf', score: 32 }, { r: 64, color: '#3b82f6', score: 64 },
+            { r: 78, color: '#818cf8', score: 128 }, { r: 92, color: '#c084fc', score: 256 },
+            { r: 105, color: '#db2777', score: 512 }
         ];
 
-        function initGame() {
-            // エンジンの初期化
-            engine = Engine.create();
-            
-            // 描画設定
-            render = Render.create({
-                element: container,
-                engine: engine,
-                options: {
-                    width: container.clientWidth,
-                    height: container.clientHeight,
-                    wireframes: false,
-                    background: '#1e293b'
-                }
-            });
-            Render.run(render);
-            
-            runner = Runner.create();
-            Runner.run(runner, engine);
-
-            // 壁の作成
-            const thickness = 60;
-            const ground = Bodies.rectangle(container.clientWidth/2, container.clientHeight + thickness/2 - 5, container.clientWidth, thickness, { isStatic: true, render: { fillStyle: '#334155' } });
-            const leftWall = Bodies.rectangle(-thickness/2, container.clientHeight/2, thickness, container.clientHeight, { isStatic: true });
-            const rightWall = Bodies.rectangle(container.clientWidth + thickness/2, container.clientHeight/2, thickness, container.clientHeight, { isStatic: true });
-            
-            Composite.add(engine.world, [ground, leftWall, rightWall]);
-
-            // マージ（合体）ロジック
-            Events.on(engine, 'collisionStart', (event) => {
-                event.pairs.forEach((pair) => {
-                    const { bodyA, bodyB } = pair;
-                    if (bodyA.label === bodyB.label && bodyA.label.startsWith('ball_')) {
-                        const level = parseInt(bodyA.label.split('_')[1]);
-                        if (level < ballTypes.length - 1) {
-                            const newX = (bodyA.position.x + bodyB.position.x) / 2;
-                            const newY = (bodyA.position.y + bodyB.position.y) / 2;
-                            
-                            // 合体後のボールを作成
-                            Composite.remove(engine.world, [bodyA, bodyB]);
-                            const newBall = createBall(newX, newY, level + 1);
-                            
-                            score += ballTypes[level + 1].score;
-                            document.getElementById('score-display').innerText = "SCORE: " + score;
-                        }
-                    }
-                });
-            });
-        }
-
-        function createBall(x, y, level) {
-            const type = ballTypes[level];
-            const ball = Bodies.circle(x, y, type.r, {
-                label: 'ball_' + level,
-                restitution: 0.4,
-                friction: 0.1,
-                render: { fillStyle: type.color }
-            });
-            Composite.add(engine.world, ball);
-            return ball;
+        function resize() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
         }
 
         function startNewGame() {
             document.getElementById("menuScreen").style.display = "none";
-            document.getElementById("ad-middle-container").style.display = "none";
-            
-            // 既存のワールドをクリア
-            if (engine) Composite.clear(engine.world, false);
-            initGame();
-            
-            score = 0;
-            document.getElementById('score-display').innerText = "SCORE: 0";
-            gameActive = true;
+            score = 0; balls = []; gameActive = true;
+            document.getElementById('score-val').innerText = "SCORE: 0";
+            requestAnimationFrame(update);
         }
 
-        // タップでボールを落とす
-        container.addEventListener('pointerdown', (e) => {
-            if (!gameActive || !canDrop) return;
-            
-            const rect = container.getBoundingClientRect();
+        canvas.addEventListener('pointerdown', (e) => {
+            if(!gameActive) return;
+            const rect = canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
-            
-            // ランダムで最初の3段階のボールを落とす
-            const startLevel = Math.floor(Math.random() * 3);
-            createBall(x, 30, startLevel);
-            
-            // 連続投下防止（0.5秒）
-            canDrop = false;
-            setTimeout(() => { canDrop = true; }, 500);
+            const level = Math.floor(Math.random() * 3);
+            balls.push({ x, y: 30, vx: 0, vy: 2, level: level, r: ballTypes[level].r });
         });
 
-        // ゲームオーバー判定（1秒おき）
-        setInterval(() => {
-            if (!gameActive) return;
-            const bodies = Composite.allBodies(engine.world);
-            bodies.forEach(body => {
-                // 静止物（壁）以外で、一定時間赤い線（y=60）より上にいたらアウト
-                if (!body.isStatic && body.position.y < 60 && Math.abs(body.velocity.y) < 0.1) {
+        function update() {
+            if(!gameActive) return;
+            ctx.clearRect(0,0,canvas.width, canvas.height);
+            
+            // 物理挙動（簡易）
+            for(let i=0; i<balls.length; i++) {
+                let b = balls[i];
+                b.vy += 0.25; // 重力
+                b.x += b.vx; b.y += b.vy;
+                b.vx *= 0.98; // 摩擦
+
+                // 床・壁判定
+                if(b.y + b.r > canvas.height) { b.y = canvas.height - b.r; b.vy *= -0.3; }
+                if(b.x - b.r < 0) { b.x = b.r; b.vx *= -0.5; }
+                if(b.x + b.r > canvas.width) { b.x = canvas.width - b.r; b.vx *= -0.5; }
+
+                // ボール同士の衝突
+                for(let j=i+1; j<balls.length; j++) {
+                    let b2 = balls[j];
+                    let dx = b2.x - b.x, dy = b2.y - b.y;
+                    let dist = Math.sqrt(dx*dx + dy*dy);
+                    let minDist = b.r + b2.r;
+
+                    if(dist < minDist) {
+                        if(b.level === b2.level && b.level < ballTypes.length - 1) {
+                            // 合体！
+                            b.level++; b.r = ballTypes[b.level].r;
+                            b.y -= 5; b.vy = -2;
+                            score += ballTypes[b.level].score;
+                            document.getElementById('score-val').innerText = "SCORE: " + score;
+                            balls.splice(j, 1);
+                            break;
+                        }
+                        // 押し出し
+                        let angle = Math.atan2(dy, dx);
+                        let moveX = Math.cos(angle) * (minDist - dist) / 2;
+                        let moveY = Math.sin(angle) * (minDist - dist) / 2;
+                        b.x -= moveX; b.y -= moveY;
+                        b2.x += moveX; b2.y += moveY;
+                        b.vx -= moveX * 0.1; b.vy -= moveY * 0.1;
+                        b2.vx += moveX * 0.1; b2.vy += moveY * 0.1;
+                    }
+                }
+
+                // 描画
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
+                ctx.fillStyle = ballTypes[b.level].color;
+                ctx.fill();
+                ctx.strokeStyle = "rgba(255,255,255,0.3)";
+                ctx.stroke();
+
+                // オーバー判定
+                if(b.y < 60 && Math.abs(b.vy) < 0.5 && b.y > 0) {
                     gameOver();
                 }
-            });
-        }, 1000);
+            }
+            if(gameActive) requestAnimationFrame(update);
+        }
 
         function gameOver() {
             gameActive = false;
-            document.getElementById("result-msg").innerText = "あふれちゃった！😱\nSCORE: " + score;
-            document.getElementById("ad-middle-container").style.display = "flex";
+            document.getElementById("result-msg").innerHTML = "あふれちゃった！😱<br>SCORE: " + score;
             document.getElementById("menuScreen").style.display = "flex";
         }
 
-        window.onload = () => {
-            initGame();
-            document.getElementById("menuScreen").style.display = "flex";
-        };
+        window.onload = () => { resize(); document.getElementById("menuScreen").style.display = "flex"; };
     </script>
 </body>
 </html>
