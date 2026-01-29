@@ -12,26 +12,38 @@
         #ad-top { top: 0; } #ad-bottom { bottom: 0; }
 
         #game-outer { position: absolute; top: 100px; bottom: 100px; left: 0; right: 0; background: #1e293b; overflow: hidden; }
-        #game-canvas { width: 100%; height: 100%; cursor: crosshair; display: block; }
+        #game-canvas { width: 100%; height: 100%; display: block; }
         
         #ui-layer { position: absolute; top: 10px; left: 10px; z-index: 10; pointer-events: none; }
         .score-box { background: rgba(0,0,0,0.6); color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; border: 1px solid #475569; }
-
         #dead-line { position: absolute; top: 60px; left: 0; width: 100%; height: 2px; background: rgba(255,0,0,0.4); border-top: 2px dashed #ef4444; pointer-events: none; }
 
         #menuScreen { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.9); display: flex; flex-direction: column; 
-            align-items: center; justify-content: flex-start; z-index: 50; padding-top: 20px; color: white;
+            background: rgba(0,0,0,0.92); display: flex; flex-direction: column; 
+            align-items: center; justify-content: flex-start; z-index: 50; 
+            padding-top: 40px; color: white; overflow-y: auto;
         }
-        .menu-btn { width: 260px; padding: 15px; font-size: 18px; border: none; border-radius: 30px; font-weight: bold; cursor: pointer; text-decoration: none; text-align: center; margin-top: 10px; }
-        #retry-btn { background: #facc15; color: #000; }
-        #more-games-btn { background: #ff4081; color: white; }
+
+        /* 忍び広告：初期状態は非表示 */
+        #ad-middle-container { 
+            width: 300px; min-height: 120px; background: rgba(255,255,255,0.05); 
+            margin: 20px 0; display: none; justify-content: center; align-items: center; 
+        }
+
+        .menu-btn-group { display: flex; flex-direction: column; align-items: center; width: 100%; gap: 15px; padding-bottom: 40px; }
+        .menu-btn { 
+            width: 280px; padding: 16px; font-size: 18px; border: none; 
+            border-radius: 35px; font-weight: bold; cursor: pointer; 
+            text-decoration: none; text-align: center; display: block;
+        }
+        #retry-btn { background: #facc15; color: #000; box-shadow: 0 4px #ca8a04; }
+        #more-games-btn { background: #ff4081; color: white; box-shadow: 0 4px #c2185b; }
     </style>
 </head>
 <body>
 
-    <div id="ad-top"><iframe src="ad.html" style="border:none;width:100%;height:100px;"></iframe></div>
+    <div id="ad-top"><iframe id="frame-top" src="ad.html" style="border:none;width:100%;height:100px;"></iframe></div>
 
     <div id="game-outer">
         <div id="ui-layer"><div class="score-box" id="score-val">SCORE: 0</div></div>
@@ -39,10 +51,15 @@
         <canvas id="game-canvas"></canvas>
 
         <div id="menuScreen">
-            <h2 id="result-msg" style="color:#facc15; text-align:center;">Neo Merge</h2>
-            <p style="text-align:center; font-size:13px; color:#cbd5e1; padding:0 20px;">
-                タップでボールを投下！<br>同じ色をぶつけて大きくしよう。<br>赤い線を越えるとゲームオーバー！
+            <h2 id="result-msg" style="color:#facc15; text-align:center; margin-bottom: 10px;">Neo Merge</h2>
+            <p id="guide-txt" style="text-align:center; font-size:14px; color:#cbd5e1; padding:0 30px; line-height:1.6;">
+                同じ色のボールをぶつけて大きくしよう！<br>赤い線を越えるとゲームオーバー！
             </p>
+
+            <div id="ad-middle-container">
+                <script src="https://adm.shinobi.jp/s/1e6de436ea850948e238e975a93767eb"></script>
+            </div>
+
             <div class="menu-btn-group">
                 <button id="retry-btn" class="menu-btn" onclick="startNewGame()">★ スタート ★</button>
                 <a href="https://saaaachi.github.io/Grow-Planet/" id="more-games-btn" class="menu-btn">★ 他のゲームはこちら ★</a>
@@ -50,7 +67,7 @@
         </div>
     </div>
 
-    <div id="ad-bottom"><iframe src="ad.html" style="border:none;width:100%;height:100px;"></iframe></div>
+    <div id="ad-bottom"><iframe id="frame-bottom" src="ad.html" style="border:none;width:100%;height:100px;"></iframe></div>
 
     <script>
         const canvas = document.getElementById('game-canvas');
@@ -71,6 +88,7 @@
 
         function startNewGame() {
             document.getElementById("menuScreen").style.display = "none";
+            document.getElementById("ad-middle-container").style.display = "none"; // スタート時は隠す
             score = 0; balls = []; gameActive = true;
             document.getElementById('score-val').innerText = "SCORE: 0";
             requestAnimationFrame(update);
@@ -79,7 +97,7 @@
         canvas.addEventListener('pointerdown', (e) => {
             if(!gameActive) return;
             const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
+            const x = Math.max(15, Math.min(canvas.width - 15, e.clientX - rect.left));
             const level = Math.floor(Math.random() * 3);
             balls.push({ x, y: 30, vx: 0, vy: 2, level: level, r: ballTypes[level].r });
         });
@@ -88,19 +106,14 @@
             if(!gameActive) return;
             ctx.clearRect(0,0,canvas.width, canvas.height);
             
-            // 物理挙動（簡易）
             for(let i=0; i<balls.length; i++) {
                 let b = balls[i];
-                b.vy += 0.25; // 重力
-                b.x += b.vx; b.y += b.vy;
-                b.vx *= 0.98; // 摩擦
+                b.vy += 0.25; b.x += b.vx; b.y += b.vy; b.vx *= 0.98;
 
-                // 床・壁判定
                 if(b.y + b.r > canvas.height) { b.y = canvas.height - b.r; b.vy *= -0.3; }
                 if(b.x - b.r < 0) { b.x = b.r; b.vx *= -0.5; }
                 if(b.x + b.r > canvas.width) { b.x = canvas.width - b.r; b.vx *= -0.5; }
 
-                // ボール同士の衝突
                 for(let j=i+1; j<balls.length; j++) {
                     let b2 = balls[j];
                     let dx = b2.x - b.x, dy = b2.y - b.y;
@@ -109,7 +122,6 @@
 
                     if(dist < minDist) {
                         if(b.level === b2.level && b.level < ballTypes.length - 1) {
-                            // 合体！
                             b.level++; b.r = ballTypes[b.level].r;
                             b.y -= 5; b.vy = -2;
                             score += ballTypes[b.level].score;
@@ -117,7 +129,6 @@
                             balls.splice(j, 1);
                             break;
                         }
-                        // 押し出し
                         let angle = Math.atan2(dy, dx);
                         let moveX = Math.cos(angle) * (minDist - dist) / 2;
                         let moveY = Math.sin(angle) * (minDist - dist) / 2;
@@ -128,15 +139,14 @@
                     }
                 }
 
-                // 描画
                 ctx.beginPath();
                 ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
                 ctx.fillStyle = ballTypes[b.level].color;
                 ctx.fill();
                 ctx.strokeStyle = "rgba(255,255,255,0.3)";
+                ctx.lineWidth = 2;
                 ctx.stroke();
 
-                // オーバー判定
                 if(b.y < 60 && Math.abs(b.vy) < 0.5 && b.y > 0) {
                     gameOver();
                 }
@@ -147,7 +157,10 @@
         function gameOver() {
             gameActive = false;
             document.getElementById("result-msg").innerHTML = "あふれちゃった！😱<br>SCORE: " + score;
+            document.getElementById("retry-btn").innerText = "★ もう一度挑戦 ★";
+            document.getElementById("ad-middle-container").style.display = "flex"; // ここで広告を表示！
             document.getElementById("menuScreen").style.display = "flex";
+            document.getElementById("menuScreen").scrollTop = 0;
         }
 
         window.onload = () => { resize(); document.getElementById("menuScreen").style.display = "flex"; };
