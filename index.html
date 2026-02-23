@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Neo Merge - 第41弾</title>
+    <title>Neo Merge - v26.8</title>
     <style>
         * { box-sizing: border-box; }
-        body { margin: 0; overflow: hidden; background: #0f172a; font-family: sans-serif; touch-action: none; position: fixed; width: 100%; height: 100%; }
+        body { margin: 0; overflow: hidden; background: #0f172a; font-family: sans-serif; touch-action: none; position: fixed; width: 100%; height: 100%; display: flex; flex-direction: column; }
         
-        /* 上下広告：iframeを確実に制御 */
-        #ad-top, #ad-bottom { position: fixed; left: 0; width: 100%; height: 100px; background: #333; z-index: 100; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        #ad-top { top: 0; } #ad-bottom { bottom: 0; }
-        .ad-frame { border: none; width: 100%; height: 100px; display: block; }
+        /* 上下広告：150px */
+        #ad-top, #ad-bottom { width: 100%; height: 150px; background: #333; display: flex; align-items: center; justify-content: center; flex-shrink: 0; z-index: 100; position: relative; }
+        iframe { border: none; width: 100%; height: 100%; background: #333; }
 
-        #game-outer { position: absolute; top: 100px; bottom: 100px; left: 0; right: 0; background: #1e293b; overflow: hidden; }
+        /* ゲームエリア */
+        #game-outer { flex-grow: 1; position: relative; width: 100%; background: #1e293b; overflow: hidden; }
         #game-canvas { width: 100%; height: 100%; display: block; }
         
         #ui-layer { position: absolute; top: 10px; left: 10px; z-index: 10; pointer-events: none; }
@@ -23,25 +23,32 @@
         #menuScreen { 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
             background: rgba(0,0,0,0.92); display: flex; flex-direction: column; 
-            align-items: center; justify-content: flex-start; z-index: 50; 
-            padding-top: 30px; color: white;
+            align-items: center; justify-content: center; z-index: 50; color: white;
+            padding: 20px 0;
         }
 
-        /* 中央の「切り替えない」忍者広告エリア */
+        /* 中央広告 */
         #ad-middle-container { 
-            width: 300px; min-height: 125px; background: rgba(255,255,255,0.05); 
+            width: 320px; height: 100px; background: rgba(255,255,255,0.05); 
             margin: 15px 0; display: none; justify-content: center; align-items: center; 
+            overflow: hidden; flex-shrink: 0; border: 1px solid #444; transition: opacity 0.3s;
         }
 
-        .menu-btn-group { display: flex; flex-direction: column; align-items: center; width: 100%; gap: 12px; margin-top: 10px; }
-        .menu-btn { width: 280px; padding: 14px; font-size: 18px; border: none; border-radius: 35px; font-weight: bold; cursor: pointer; text-decoration: none; text-align: center; display: block; }
+        .menu-btn-group { display: flex; flex-direction: column; align-items: center; width: 100%; gap: 12px; }
+        .menu-btn { width: 260px; padding: 15px; font-size: 18px; border: none; border-radius: 50px; font-weight: bold; cursor: pointer; text-decoration: none; text-align: center; transition: 0.2s; }
         #retry-btn { background: #facc15; color: #000; box-shadow: 0 4px #ca8a04; }
-        #more-games-btn { background: #ff4081; color: white; box-shadow: 0 4px #c2185b; }
+        #retry-btn:disabled { background: #666; color: #aaa; box-shadow: none; }
+        .link-btn { background: #ff4081; color: white; box-shadow: 0 4px #c2185b; }
+
+        /* 大広告 */
+        #bigAdScreen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 3000; display: none; justify-content: center; align-items: center; }
+        .ad-frame-wrapper { width: 95%; height: 85%; position: relative; }
+        .ad-close-btn { position: absolute; top: -15px; right: -15px; color: white; font-size: 22px; font-weight: bold; cursor: pointer; background: rgba(0,0,0,0.8); width: 44px; height: 44px; border-radius: 50%; display: none; align-items: center; justify-content: center; z-index: 3100; border: 2px solid white; }
     </style>
 </head>
 <body>
 
-    <div id="ad-top"><iframe id="frame-top" class="ad-frame" src="ad.html"></iframe></div>
+    <div id="ad-top"><iframe id="frame-top" src="ad.html?pos=top"></iframe></div>
 
     <div id="game-outer">
         <div id="ui-layer"><div class="score-box" id="score-val">SCORE: 0</div></div>
@@ -55,22 +62,31 @@
             </p>
 
             <div id="ad-middle-container">
-                <script src="https://adm.shinobi.jp/s/1e6de436ea850948e238e975a93767eb"></script>
+                <div id="im-8b492cea6667490da71c488bdcc7cfc8">
+                    <script async src="https://imp-adedge.i-mobile.co.jp/script/v1/spot.js?20220104"></script>
+                    <script>(window.adsbyimobile=window.adsbyimobile||[]).push({pid:84561,mid:590804,asid:1924211,type:"banner",display:"inline",elementid:"im-8b492cea6667490da71c488bdcc7cfc8"})</script>
+                </div>
             </div>
 
             <div class="menu-btn-group">
-                <button id="retry-btn" class="menu-btn" onclick="startNewGame()">★ スタート ★</button>
-                <a href="https://saaaachi.github.io/Grow-Planet/" id="more-games-btn" class="menu-btn">★ 他のゲームはこちら ★</a>
+                <button id="retry-btn" class="menu-btn" onclick="startNewGame()">スタート！</button>
+                <a href="https://saaaachi.github.io/" class="menu-btn link-btn">他のゲームへ</a>
+            </div>
+        </div>
+
+        <div id="bigAdScreen">
+            <div class="ad-frame-wrapper">
+                <div id="ad-close-btn" class="ad-close-btn" onclick="closeBigAd()"></div>
+                <iframe id="ad-large-frame" src="" style="width:100%; height:100%; border:none;"></iframe>
             </div>
         </div>
     </div>
 
-    <div id="ad-bottom"><iframe id="frame-bottom" class="ad-frame" src="ad.html"></iframe></div>
+    <div id="ad-bottom"><iframe id="frame-bottom" src="ad.html?pos=bottom"></iframe></div>
 
     <script>
-        const canvas = document.getElementById('game-canvas');
-        const ctx = canvas.getContext('2d');
-        let score = 0, gameActive = false, balls = [];
+        const canvas = document.getElementById('game-canvas'), ctx = canvas.getContext('2d'), menuScreen = document.getElementById("menuScreen"), adMid = document.getElementById("ad-middle-container"), retryBtn = document.getElementById("retry-btn"), scoreUi = document.getElementById('score-val'), resultMsg = document.getElementById("result-msg"), guideTxt = document.getElementById("guide-txt");
+        let score = 0, gameActive = false, balls = [], playCount = 0;
         const ballTypes = [
             { r: 15, color: '#f87171', score: 2 }, { r: 24, color: '#fb923c', score: 4 },
             { r: 32, color: '#fbbf24', score: 8 }, { r: 42, color: '#a3e635', score: 16 },
@@ -79,18 +95,14 @@
             { r: 105, color: '#db2777', score: 512 }
         ];
 
-        function resize() {
-            canvas.width = canvas.offsetWidth;
-            canvas.height = canvas.offsetHeight;
-        }
+        function resize() { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; }
+        window.onload = () => { resize(); menuScreen.style.display = "flex"; };
+        window.onresize = resize;
 
         function startNewGame() {
-            document.getElementById("menuScreen").style.display = "none";
-            document.getElementById("ad-middle-container").style.display = "none";
-            document.getElementById("guide-txt").style.display = "block";
-            score = 0; balls = []; gameActive = true;
-            document.getElementById('score-val').innerText = "SCORE: 0";
-            requestAnimationFrame(update);
+            menuScreen.style.display = "none"; adMid.style.display = "none";
+            guideTxt.style.display = "block"; score = 0; balls = []; gameActive = true;
+            scoreUi.innerText = "SCORE: 0"; requestAnimationFrame(update);
         }
 
         canvas.addEventListener('pointerdown', (e) => {
@@ -105,71 +117,53 @@
             if(!gameActive) return;
             ctx.clearRect(0,0,canvas.width, canvas.height);
             for(let i=0; i<balls.length; i++) {
-                let b = balls[i];
-                b.vy += 0.25; b.x += b.vx; b.y += b.vy; b.vx *= 0.98;
+                let b = balls[i]; b.vy += 0.25; b.x += b.vx; b.y += b.vy; b.vx *= 0.98;
                 if(b.y + b.r > canvas.height) { b.y = canvas.height - b.r; b.vy *= -0.3; }
                 if(b.x - b.r < 0) { b.x = b.r; b.vx *= -0.5; }
                 if(b.x + b.r > canvas.width) { b.x = canvas.width - b.r; b.vx *= -0.5; }
                 for(let j=i+1; j<balls.length; j++) {
-                    let b2 = balls[j];
-                    let dx = b2.x - b.x, dy = b2.y - b.y;
-                    let dist = Math.sqrt(dx*dx + dy*dy);
-                    let minDist = b.r + b2.r;
+                    let b2 = balls[j]; let dx = b2.x - b.x, dy = b2.y - b.y;
+                    let dist = Math.sqrt(dx*dx + dy*dy), minDist = b.r + b2.r;
                     if(dist < minDist) {
                         if(b.level === b2.level && b.level < ballTypes.length - 1) {
-                            b.level++; b.r = ballTypes[b.level].r;
-                            b.y -= 5; b.vy = -2;
-                            score += ballTypes[b.level].score;
-                            document.getElementById('score-val').innerText = "SCORE: " + score;
-                            balls.splice(j, 1);
-                            break;
+                            b.level++; b.r = ballTypes[b.level].r; b.y -= 5; b.vy = -2;
+                            score += ballTypes[b.level].score; scoreUi.innerText = "SCORE: " + score;
+                            balls.splice(j, 1); break;
                         }
-                        let angle = Math.atan2(dy, dx);
-                        let moveX = Math.cos(angle) * (minDist - dist) / 2;
-                        let moveY = Math.sin(angle) * (minDist - dist) / 2;
-                        b.x -= moveX; b.y -= moveY;
-                        b2.x += moveX; b2.y += moveY;
-                        b.vx -= moveX * 0.1; b.vy -= moveY * 0.1;
-                        b2.vx += moveX * 0.1; b2.vy += moveY * 0.1;
+                        let angle = Math.atan2(dy, dx), moveX = Math.cos(angle) * (minDist - dist) / 2, moveY = Math.sin(angle) * (minDist - dist) / 2;
+                        b.x -= moveX; b.y -= moveY; b2.x += moveX; b2.y += moveY;
+                        b.vx -= moveX * 0.1; b.vy -= moveY * 0.1; b2.vx += moveX * 0.1; b2.vy += moveY * 0.1;
                     }
                 }
-                ctx.beginPath();
-                ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
-                ctx.fillStyle = ballTypes[b.level].color;
-                ctx.fill();
-                ctx.strokeStyle = "rgba(255,255,255,0.3)";
-                ctx.lineWidth = 2;
-                ctx.stroke();
-                if(b.y < 60 && Math.abs(b.vy) < 0.5 && b.y > 0) gameOver();
+                ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.fillStyle = ballTypes[b.level].color; ctx.fill();
+                ctx.strokeStyle = "rgba(255,255,255,0.3)"; ctx.lineWidth = 2; ctx.stroke();
+                if(b.y < 60 && Math.abs(b.vy) < 0.5 && b.y > 0) { gameOver(); return; }
             }
             if(gameActive) requestAnimationFrame(update);
         }
 
         function gameOver() {
-            gameActive = false;
-            document.getElementById("result-msg").innerHTML = "あふれちゃった！😱<br>SCORE: " + score;
-            document.getElementById("guide-txt").style.display = "none";
-            document.getElementById("ad-middle-container").style.display = "flex";
-            document.getElementById("menuScreen").style.display = "flex";
+            gameActive = false; playCount++;
+            retryBtn.innerText = "お待ちください..."; retryBtn.disabled = true;
+            adMid.style.display = "flex"; adMid.style.opacity = "0.4";
+            resultMsg.innerHTML = "あふれちゃった！😱<br>SCORE: " + score;
+            guideTxt.style.display = "none"; menuScreen.style.display = "flex";
+
+            setTimeout(() => { adMid.style.opacity = "1"; retryBtn.disabled = false; retryBtn.innerText = "リトライ！"; }, 1500);
+            if (playCount === 3 || (playCount > 3 && (playCount - 3) % 7 === 0)) { setTimeout(showBigAd, 500); }
         }
 
-        // --- 広告リフレッシュロジック ---
-        function refreshAds() {
-            // 現在の時刻を付与してキャッシュを回避し、確実に再読み込みさせる
-            const timestamp = new Date().getTime();
-            const topFrame = document.getElementById('frame-top');
-            const bottomFrame = document.getElementById('frame-bottom');
-            
-            if (topFrame) topFrame.src = "ad.html?t=" + timestamp;
-            if (bottomFrame) bottomFrame.src = "ad.html?t=" + timestamp;
-            console.log("Ads Refreshed at " + timestamp);
+        function showBigAd() {
+            const screen = document.getElementById("bigAdScreen"), closeBtn = document.getElementById("ad-close-btn");
+            document.getElementById("ad-large-frame").src = "./ad.large.html?t=" + Date.now();
+            screen.style.display = "flex"; let countdown = 5; closeBtn.style.display = "flex"; closeBtn.innerText = countdown; closeBtn.style.pointerEvents = "none";
+            const timerInt = setInterval(() => { countdown--; closeBtn.innerText = countdown; if (countdown <= 0) { clearInterval(timerInt); closeBtn.innerText = "×"; closeBtn.style.pointerEvents = "auto"; } }, 1000);
         }
-        
-        // 30秒ごとに実行
-        setInterval(refreshAds, 30000);
 
-        window.onload = () => { resize(); document.getElementById("menuScreen").style.display = "flex"; };
-        window.onresize = resize;
+        function closeBigAd() { document.getElementById("bigAdScreen").style.display = "none"; document.getElementById("ad-large-frame").src = ""; }
+
+        setInterval(() => { const f = document.getElementById('frame-top'); if(f) f.src = "ad.html?pos=top&t=" + Date.now(); }, 30000);
+        setTimeout(() => { setInterval(() => { const f = document.getElementById('frame-bottom'); if(f) f.src = "ad.html?pos=bottom&t=" + Date.now(); }, 30000); }, 15000);
     </script>
 </body>
 </html>
