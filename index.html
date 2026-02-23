@@ -143,15 +143,28 @@
         }
 
         function gameOver() {
-            gameActive = false; playCount++;
-            retryBtn.innerText = "お待ちください..."; retryBtn.disabled = true;
-            adMid.style.display = "flex"; adMid.style.opacity = "0.4";
+            gameActive = false;
+            playCount++; // プレイ回数をカウント
+            
+            retryBtn.innerText = "お待ちください...";
+            retryBtn.disabled = true;
+            adMid.style.display = "flex";
+            adMid.style.opacity = "0.4";
             resultMsg.innerHTML = "あふれちゃった！😱<br>SCORE: " + score;
-            guideTxt.style.display = "none"; menuScreen.style.display = "flex";
+            guideTxt.style.display = "none";
+            menuScreen.style.display = "flex";
 
-            setTimeout(() => { adMid.style.opacity = "1"; retryBtn.disabled = false; retryBtn.innerText = "リトライ！"; }, 1500);
-            if (playCount === 3 || (playCount > 3 && (playCount - 3) % 7 === 0)) { setTimeout(showBigAd, 500); }
-        }
+            // 1.5秒後にリトライボタンを有効化（誤タップ防止）
+            setTimeout(() => {
+                adMid.style.opacity = "1";
+                retryBtn.disabled = false;
+                retryBtn.innerText = "リトライ！";
+            }, 1500);
+
+            // 【ここを修正】偶数回目の終了時（2, 4, 6...回目）に大広告を表示
+            if (playCount % 2 === 0) {
+                setTimeout(showBigAd, 500);
+            }
 
         function showBigAd() {
             const screen = document.getElementById("bigAdScreen"), closeBtn = document.getElementById("ad-close-btn");
